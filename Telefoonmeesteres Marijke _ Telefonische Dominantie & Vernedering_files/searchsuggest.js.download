@@ -1,0 +1,73 @@
+$(function(){
+	
+	if ($('.searchterm').length > 0 && typeof $('.searchterm').autocomplete == 'function') {
+		try {
+		/* strip the gateway of modelid and q parameters */
+		var noq = gateway.replace(/&q\=[^&]+/,'').replace(/&modelid\=[^&]+/,'');
+		$('.searchterm').autocomplete({
+			source: function(request,response) {
+				console.log('request',request,noq);
+				$.ajax({
+					url: noq,
+					dataType: "jsonp",
+					data: {
+						q: request.term,
+						oo: 0
+					},
+					success: function(data) {
+						console.log(data);
+						response(data);
+					}
+				});
+			},
+			focus: function(event,ui) {
+				$('.searchterm').val(ui.item.name);
+			},
+			search: function() {
+				$('ul.ui-autocomplete').scrollTop(0);
+			},
+			minLength: 3,
+			select: function( event, ui ) {
+				$('.searchterm').val(ui.item.name);
+				$('form.trefwoordzoeken').append('<input type="hidden" name="qid" value="'+ui.item.modelid+'"/>').submit();
+			}
+		 }).autocomplete( "instance" )._renderItem = function( ul, item ) {
+			
+			/* IRENE: HIERONDER KUN JE DE AUTOCOMPLETE STYLEN*/
+			
+			var online_with = '';
+			if (item.online !== null && item.online >= '0' && item.camstatus >= 0)		online_with = online_with + (online_with == '' ? '' : ', ') + 'Webcammen';
+			if (item.online !== null && item.online >= '0' && item.belstatus >= 0)		online_with = online_with + (online_with == '' ? '' : ', ') + 'Bellen';
+			if (item.online !== null && item.online >= '0' && item.beeldbelstatus >= 0)	online_with = online_with + (online_with == '' ? '' : ', ') + 'Beeldbellen';
+			if (item.online !== null && item.online >= '0' && item.gluurstatus >= 0)	online_with = online_with + (online_with == '' ? '' : ', ') + 'Gluren';
+			
+			if (online_with == '')
+				online_with = '<span class="offline">Niet online</span>';
+			else
+				online_with = '<span class="online">' + online_with + '</span>';
+			
+			if (item.photo.match(/privemetmij/g)) {
+				item.photo = item.photo.replace(/(_240|_o240|_640|_500|_sp)?\.([a-z]+)$/gi,'_sp.$2').replace(/^\/\//g,'https://');
+			} else if (item.photo.match(/hotcamgirlslive/g)) {
+				item.photo = item.photo.replace(/(\d+x\d+)?\.([a-z]+)$/gi,'_260x195.$2');
+			}
+
+			console.log('item',item);
+
+			return $('<li class="searchsuggest_result">')
+				.append( '<div class="result">'+
+							'<span class="image" style="background-image:url('+item.photo+');"></span>'+
+							'<div class="name">' + item.name + "</div>" +
+							online_with +
+						'</div>'+
+						'<div class="clear"></div>'
+				)
+				.appendTo( ul );
+				
+				
+			/* IRENE: HIERBOVEN KUN JE DE AUTOCOMPLETE STYLEN*/
+		};
+		} catch(e){} 
+	}
+	
+});

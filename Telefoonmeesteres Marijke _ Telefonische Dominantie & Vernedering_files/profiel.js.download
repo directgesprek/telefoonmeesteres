@@ -1,0 +1,204 @@
+var onlineint;
+
+$('a').mousedown(function(e){
+	var url = $(this).attr('href');
+	/*if (typeof(ga) != 'undefined' && typeof(ga.getByName) != 'undefined') {
+		var tracker = ga.getAll()[0];
+		console.log('linker',tracker.get('trackingId'));
+		console.log('linker',tracker.get('linkerParam'));
+		try {
+			url = url + (url.indexOf('?') < 0 ? '?' : '&') + '_ga=' + tracker.get('linkerParam').substring(4) + '&_gaa=' + tracker.get('trackingId');
+		} catch(f) {}
+		
+	}*/
+	
+	$(this).attr('href',url);
+});
+
+function setCookie(c_name,value) {
+	var exdate = new Date();
+	var exdays = 1;
+	exdate.setDate(exdate.getDate() + exdays); /*expires in 1 day*/
+	var c_value = escape(value) + ((exdays==null) ? "" : "; expires="+exdate.toUTCString() + '; path=/; SameSite=None; Secure; domain=.' + window.location.hostname.replace(/www\./,""));
+	document.cookie = c_name + "=" + c_value;
+}
+
+function deleteCookie(c_name) {
+	var exdate = new Date();
+	exdate.setDate(exdate.getDate()-10); /*expires 10 days ago*/
+	var c_value = "; expires=" + exdate.toUTCString() + '; path=/; SameSite=None; Secure; domain=.' + window.location.hostname.replace(/www\./,"");
+	document.cookie = c_name + "=" + c_value;
+}
+
+function getCookie(c_name) {
+	var i,x,y,ARRcookies = document.cookie.split(";");
+	var ret = false;
+	for (i = 0; i < ARRcookies.length; i++) {
+		x = ARRcookies[i].substr(0,ARRcookies[i].indexOf("="));
+		y = ARRcookies[i].substr(ARRcookies[i].indexOf("=")+1);
+		x = x.replace(/^\s+|\s+$/g,"");
+		if (x == c_name) {
+			ret = unescape(y);
+			break;
+		}
+	}
+	return ret;
+}
+
+function checkOnline(){
+	clearTimeout(onlineint);
+
+	if (typeof gateway == 'undefined')
+		gateway = 'https://pay4it.nl/session/';
+
+	$.getJSON(gateway + '&jsoncallback=?',function(ret) {
+		console.log('model',ret.modelid,ret.online == 1 ? 'vrij' : (ret.online == 0 ? 'bezet' : 'offline'));
+		if (ret.online == 1) {
+			$('.bezet_' + ret.modelid).hide();
+			$('.content .boxje').removeClass('busy').removeClass('available').addClass('available');
+			$('.content').removeClass('busy').removeClass('available').addClass('available');
+		} else if (ret.online == 0) {
+			$('.bezet_' + ret.modelid).show();
+			$('.content .boxje').removeClass('busy').removeClass('available').addClass('busy');
+			$('.content').removeClass('busy').removeClass('available').addClass('busy');
+			console.log('showing','.bezet_' + ret.modelid);
+		} else if (ret.online < 0) {
+			console.log('model gaat nu offline');
+			$('.bellen.on,.beeldbellen.on,.cammen.on,.gluren.on').removeClass('on').addClass('off');
+		}
+	});
+	onlineint = setTimeout('checkOnline()',15000);
+}
+
+var audio = document.createElement("audio");
+
+checkOnline();
+
+$(function(){
+
+	$(document).on('click','a.off',function(e){
+		if (!$(this).hasClass('livealert')) {
+			e.preventDefault();
+			e.stopPropagation();
+			$(this).blur();
+			console.log('offline click');
+		}
+	});
+
+	$(document).on('click','.clearFilters',function(){
+		console.log('clearing filters');
+		setCookie("qf",JSON.stringify({}));
+	});
+
+	$(document).on('click','.clearTab',function(){
+		$.ajax({
+			dataType: "json",
+			url: navroot + 'ajax/clearTab/',
+			async: false, 
+			success: function(data) {
+				console.log('cleartab completed',data);
+			}
+		});
+	});
+
+	$(document).on('click','.modelinfo.bezet .bellen,.modelinfo.bezet .cammen,.modelinfo.bezet .beeldbellen,.modelinfo.busy .bellen,.modelinfo.busy .cammen,.modelinfo.busy .beeldbellen,.content.busy .bellen,.content.busy .cammen,.content.busy .beeldbellen,.boxje.busy .bellen,.boxje.busy .cammen,.boxje.busy .beeldbellen',function(e){
+		e.preventDefault();
+		e.stopPropagation();
+		console.log('prevented click');
+	});
+
+	$(document).on('click','.login.loggedIn,.loggedIn,.register',function(e){
+		e.preventDefault();
+		e.stopPropagation();
+		var url = 'https://privemetmij.nl/account/?pv=session&int_lang=nl&sitecode=' + sitecode + '&r=' + referer + ($(this).hasClass('register') ? '&home=1' : '');
+		
+		/*if (typeof(ga) != 'undefined' && typeof(ga.getByName) != 'undefined') {
+			var tracker = ga.getAll()[0];
+			console.log('linker',tracker.get('trackingId'));
+			console.log('linker',tracker.get('linkerParam'));
+			try {
+				url = url + (url.indexOf('?') < 0 ? '?' : '&') + '_ga=' + tracker.get('linkerParam').substring(4) + '&_gaa=' + tracker.get('trackingId');
+			} catch(f) {}
+		}*/
+		
+		location = url;
+    });
+
+	$(document).on('click','.loggedInData',function(e){
+		e.preventDefault();
+		e.stopPropagation();
+		var url = 'https://privemetmij.nl/account/?pv=session&int_lang=nl&sitecode=' + sitecode + '&tab=data&r=' + referer;
+		
+		/*if (typeof(ga) != 'undefined' && typeof(ga.getByName) != 'undefined') {
+			var tracker = ga.getAll()[0];
+			console.log('linker',tracker.get('trackingId'));
+			console.log('linker',tracker.get('linkerParam'));
+			try {
+				url = url + (url.indexOf('?') < 0 ? '?' : '&') + '_ga=' + tracker.get('linkerParam').substring(4) + '&_gaa=' + tracker.get('trackingId');
+			} catch(f) {}
+		}*/
+		
+		location = url;
+    });
+
+	$(document).on('click','.logout',function(e){
+		e.preventDefault();
+		e.stopPropagation();
+
+		deleteCookie('epay');
+		deleteCookie('_eps');
+		location = "/";
+
+		/*var url = 'https://privemetmij.nl/account/?pv=session&int_lang=nl&sitecode=' + sitecode + '&r=' + referer + '&tab=data' + ($(this).hasClass('register') ? '&home=1' : '');
+		
+		if (typeof(ga) != 'undefined' && typeof(ga.getByName) != 'undefined') {
+			var tracker = ga.getAll()[0];
+			console.log('linker',tracker.get('trackingId'));
+			console.log('linker',tracker.get('linkerParam'));
+			try {
+				url = url + (url.indexOf('?') < 0 ? '?' : '&') + '_ga=' + tracker.get('linkerParam').substring(4) + '&_gaa=' + tracker.get('trackingId');
+			} catch(f) {}
+		}
+		
+		location = url;*/
+	});
+
+	$('.luisterbutton').css('cursor','pointer').click(function(e) {
+
+		if($(this).hasClass("stopbutton")){
+			e.preventDefault();
+			e.stopPropagation();
+			try {
+				audio.pause();
+			} catch(e){}
+
+			$(this).removeClass('stopbutton');
+		}
+		else{
+			e.preventDefault();
+			e.stopPropagation();
+			var code = $(this).attr('rel');
+			if (code.length < 4) {
+				while (code.length < 4) {
+					code = '0' + code;
+				}
+			}
+
+			try {
+				audio.pause();
+			} catch(e){}
+
+			if ($(this).hasClass('ex')) {
+				audio.setAttribute('src',model_audio_url+'p' + code + '_18.mp3');
+			} else {
+				audio.setAttribute('src',model_audio_url+'p' + code + '.mp3');
+			}
+			audio.load();
+			audio.play();
+			$('.luisterbutton').removeClass('stopbutton');
+			$(this).addClass('stopbutton');
+		}
+
+	});
+
+});

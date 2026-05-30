@@ -1,0 +1,76 @@
+var usingfav = false;
+$(function(){
+	
+	$(document).on('click','.setFavorite',function(e){
+		if (!usingfav) {
+			usingfav = true;
+			console.log('disabling favbutton');
+			e.preventDefault();
+			var cur = this;
+			/* $(cur).hide(); */
+
+			var curmodelid	= $(this).attr('data');
+			var adding		= $(this).hasClass('add') ? 1 : 0;
+
+			url = '/ajax/setFavorite/'+$(this).attr('data')+'/' + adding +'/';
+			
+			console.log('clicked setfavorite',curmodelid,adding,url);
+
+			$.getJSON(url,function(ret){
+				switch (true) {
+					case (ret == -4):
+						$('.layover .setFavorite.add').removeClass('off').addClass('on');
+						$('.layover .setFavorite.remove').removeClass('on').addClass('off');
+
+						if (typeof(filter) != 'undefined' && filter == 'favorite') {
+							$('.modelbox_'+curmodelid).remove();
+						}
+
+						$('.camname_'+curmodelid+' .setFavorite.add').removeClass('off').addClass('on');
+						$('.camname_'+curmodelid+' .setFavorite.remove').removeClass('on').addClass('off');
+						break;
+					case (ret == -3 || ret == -2):
+						alert('Je moet eerst inloggen om gebruik te kunnen maken van favorieten!');
+						location = '/account/';
+						break;
+					case (ret == -1):
+						alert('Onjuiste aanroep!');
+						break;
+					case (ret == 0):
+						alert('Niets gewijzigd.');
+						break;
+					case (ret == 1):
+						location.reload();
+						/*if (adding == 1) {
+							$('.layover .setFavorite.add').removeClass('on').addClass('off');
+							$('.layover .setFavorite.remove').removeClass('off').addClass('on');
+
+							$('.camname_'+curmodelid+' .setFavorite.add').removeClass('on').addClass('off');
+							$('.camname_'+curmodelid+' .setFavorite.remove').removeClass('off').addClass('on');
+						} else {
+							$('.layover .setFavorite.add').removeClass('off').addClass('on');
+							$('.layover .setFavorite.remove').removeClass('on').addClass('off');
+
+							if (
+								(typeof(filter) != 'undefined' && filter == 'favorite') ||
+								(typeof(curfilter) != 'undefined' && curfilter == 'favorieten')
+							) {
+								$('.modelbox_'+curmodelid).remove();
+							}
+
+							$('.camname_'+curmodelid+' .setFavorite.add').removeClass('off').addClass('on');
+							$('.camname_'+curmodelid+' .setFavorite.remove').removeClass('on').addClass('off');
+						}*/
+						break;
+				}
+
+				usingfav = false;
+				console.log('enabling favbutton');
+				
+			});
+
+			$(this).blur();
+		}
+	});
+	
+});
